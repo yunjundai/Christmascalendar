@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025 聖誕倒數月曆 | 戴宇君老師製作</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: Zen Maru Gothic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'xmas-red': '#D42426',
+                        'xmas-green': '#165B33',
+                        'xmas-gold': '#F8B229',
+                        'xmas-cream': '#F0E6D2',
+                    },
+                    fontFamily: {
+                        'zen': ['"Zen Maru Gothic"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background: linear-gradient(135deg, #fdfbf7 0%, #fceed5 100%);
+            overflow-x: hidden;
+        }
+
+        /* Snow Effect */
+        .snowflake {
+            position: fixed;
+            top: -10px;
+            color: #fff;
+            font-size: 1em;
+            text-shadow: 0 0 5px #0002;
+            animation-name: fall;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(100vh); }
+        }
+
+        /* 3D Flip Card */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+        
+        .card.opened .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .card-front {
+            background-color: #D42426; /* Red default */
+            color: white;
+            font-weight: bold;
+            font-size: 1.5rem;
+            border: 2px solid #fff;
+        }
+
+        /* Pattern for front */
+        .card-front::after {
+            content: '';
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border: 1px dashed rgba(255,255,255,0.5);
+            border-radius: 0.5rem;
+        }
+
+        .card:nth-child(even) .card-front {
+            background-color: #165B33; /* Green */
+        }
+        
+        .card:nth-child(3n) .card-front {
+            background-color: #C5984A; /* Gold-ish */
+        }
+
+        .card-back {
+            background-color: white;
+            color: #333;
+            transform: rotateY(180deg);
+            border: 2px solid #D42426;
+            flex-direction: column;
+        }
+
+        .card.disabled .card-inner {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Ornament Animation on Tree */
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .ornament {
+            animation: popIn 0.5s ease-out forwards;
+        }
+
+        /* Santa Animation */
+        #santa-sleigh {
+            position: fixed;
+            top: 20%;
+            left: -300px;
+            z-index: 50;
+            transition: left 10s linear;
+            pointer-events: none;
+        }
+        .santa-fly {
+            animation: flyAcross 15s linear forwards;
+        }
+        @keyframes flyAcross {
+            0% { left: -300px; transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-50px) rotate(5deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(50px) rotate(-5deg); }
+            100% { left: 100vw; transform: translateY(0); }
+        }
+
+        /* Modal Transition */
+        .modal {
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Tree Styles */
+        .tree-container {
+            position: relative;
+            width: 200px;
+            height: 280px;
+            margin: 0 auto;
+        }
+        .tree-layer {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+        .tree-layer-1 { bottom: 40px; border-width: 0 100px 100px 100px; border-color: transparent transparent #165B33 transparent; z-index: 1; }
+        .tree-layer-2 { bottom: 100px; border-width: 0 80px 80px 80px; border-color: transparent transparent #1A6B3D transparent; z-index: 2; }
+        .tree-layer-3 { bottom: 150px; border-width: 0 60px 60px 60px; border-color: transparent transparent #1E7D46 transparent; z-index: 3; }
+        .trunk {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background-color: #5D4037;
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #F8B229;
+            font-size: 2rem;
+            z-index: 10;
+            filter: drop-shadow(0 0 5px gold);
+        }
+
+        /* Scrollbar for wish list */
+        .wish-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .wish-list::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen flex flex-col relative" id="capture-area">
+
+    <!-- Snow Container -->
+    <div id="snow-container"></div>
+
+    <!-- Santa Sleigh -->
+    <div id="santa-sleigh">
+        <img src="https://img.icons8.com/color/96/sleigh.png" alt="Santa" style="width: 150px; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));">
+    </div>
+
+    <!-- Header -->
+    <header class="w-full p-6 flex flex-col md:flex-row justify-between items-center z-10 bg-white/60 backdrop-blur-sm border-b border-white/50 sticky top-0 shadow-sm">
+        <div class="flex items-center gap-3 mb-4 md:mb-0">
+            <i class="fa-solid fa-holly-berry text-xmas-red text-3xl"></i>
+            <h1 class="text-3xl font-bold text-xmas-green tracking-wider">2025 聖誕倒數</h1>
+        </div>
+        <div class="flex gap-3">
+            <button id="mode-toggle" class="px-4 py-2 rounded-full bg-blue-100 text-blue-700 font-bold hover:bg-blue-200 transition text-sm flex items-center gap-2">
+                <i class="fa-solid fa-toggle-on"></i> <span id="mode-text">嚴格模式</span>
+            </button>
+            <button id="screenshot-btn" class="px-4 py-2 rounded-full bg-xmas-red text-white font-bold hover:bg-red-700 transition shadow-lg flex items-center gap-2">
+                <i class="fa-solid fa-camera"></i> 保存這份美好
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto p-4 md:p-8 flex flex-col lg:flex-row gap-8 z-10">
+        
+        <!-- Left: Calendar Grid -->
+        <section class="lg:w-2/3">
+            <div class="bg-white/80 p-6 rounded-2xl shadow-xl backdrop-blur-md">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" id="calendar-grid">
+                    <!-- Cards will be injected here JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Right: Side Panel (Tree & Wishes) -->
+        <section class="lg:w-1/3 flex flex-col gap-6">
+            
+            <!-- Interactive Tree -->
+            <div class="bg-white/80 p-6 rounded-2xl shadow-xl backdrop-blur-md text-center">
+                <h2 class="text-xl font-bold text-xmas-green mb-4"><i class="fa-solid fa-tree mr-2"></i>收集聖誕樹</h2>
+                <div class="tree-container" id="tree-container">
+                    <div class="star"><i class="fa-solid fa-star"></i></div>
+                    <div class="tree-layer tree-layer-3"></div>
+                    <div class="tree-layer tree-layer-2"></div>
+                    <div class="tree-layer tree-layer-1"></div>
+                    <div class="trunk"></div>
+                    <!-- Ornaments injected here -->
+                </div>
+                <div class="mt-4 bg-gray-200 rounded-full h-4 overflow-hidden relative">
+                    <div id="progress-bar" class="bg-xmas-red h-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+                <p class="mt-2 text-sm text-gray-600 font-bold">進度：<span id="progress-text">0/25</span></p>
+            </div>
+
+            <!-- Wish List -->
+            <div class="bg-white/80 p-6 rounded-2xl shadow-xl backdrop-blur-md flex-grow flex flex-col">
+                <h2 class="text-xl font-bold text-xmas-red mb-4"><i class="fa-solid fa-heart mr-2"></i>聖誕許願池</h2>
+                
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="wish-input" placeholder="許下一個願望..." class="flex-grow px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-xmas-green">
+                    <button id="add-wish-btn" class="bg-xmas-green text-white px-4 py-2 rounded-lg hover:bg-green-800 transition">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+
+                <ul id="wish-list" class="wish-list space-y-2 overflow-y-auto max-h-[300px] flex-grow">
+                    <!-- Wishes injected here -->
+                </ul>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center p-6 text-gray-500 font-medium bg-white/40 mt-8 z-10">
+        <p>© 2025 戴宇君老師製作 | 祝大家聖誕快樂！</p>
+    </footer>
+
+    <!-- Modal (Detail View) -->
+    <div id="modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100 relative">
+            
+            <!-- Modal Header -->
+            <div class="bg-xmas-red p-4 flex justify-between items-center text-white">
+                <h3 id="modal-title" class="text-2xl font-bold">Day 1</h3>
+                <button id="close-modal" class="hover:bg-red-800 rounded-full w-8 h-8 flex items-center justify-center transition">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-8 text-center">
+                <div id="modal-icon" class="text-6xl text-xmas-gold mb-6 drop-shadow-md"></div>
+                <div id="modal-content" class="text-lg text-gray-700 leading-relaxed mb-6"></div>
+                
+                <!-- Special Action Area (Buttons, Links, Answers) -->
+                <div id="modal-action" class="mt-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /** Data: 25 Days of Content **/
+        const adventData = [
+            { day: 1, type: 'quote', icon: 'fa-quote-left', content: '「聖誕節不是一個時間，也不僅僅是一個季節，而是一種心態。」 – Calvin Coolidge', action: null },
+            { day: 2, type: 'song', icon: 'fa-music', content: '今日推薦歌曲：<br><strong>Jingle Bells</strong>', action: { label: '去聽歌', link: 'https://www.youtube.com/results?search_query=jingle+bells' } },
+            { day: 3, type: 'riddle', icon: 'fa-question', content: '謎語：聖誕老人為什麼擅長空手道？', answer: '因為他有黑帶 (Black Belt)！' },
+            { day: 4, type: 'book', icon: 'fa-book-open', content: '繪本推薦：《北極特快車》<br>關於相信與奇蹟的故事。', action: { label: '查看簡介', link: 'https://www.google.com/search?q=北極特快車+繪本' } },
+            { day: 5, type: 'fact', icon: 'fa-lightbulb', content: '冷知識：<br>聖誕老人的馴鹿魯道夫，其實原本不是故事的一部分，是 1939 年為了百貨公司促銷才創造出來的！', action: null },
+            { day: 6, type: 'quote', icon: 'fa-star', content: '「最好的禮物不是在聖誕樹下，而是彼此相伴的情誼。」', action: null },
+            { day: 7, type: 'riddle', icon: 'fa-question', content: '謎語：哪一種人最怕聖誕節？', answer: '雪人 (Snowman)，因為氣氛太溫暖了！' },
+            { day: 8, type: 'song', icon: 'fa-music', content: '今日推薦歌曲：<br><strong>All I Want for Christmas Is You</strong>', action: { label: '去聽歌', link: 'https://www.youtube.com/results?search_query=All+I+Want+for+Christmas+Is+You' } },
+            { day: 9, type: 'fact', icon: 'fa-lightbulb', content: '冷知識：<br>在波蘭，蜘蛛被認為是聖誕樹上的吉祥象徵，因為傳說蜘蛛為耶穌織了毯子。', action: null },
+            { day: 10, type: 'book', icon: 'fa-book-open', content: '繪本推薦：《胡桃鉗》<br>一場夢幻的聖誕夜冒險。', action: { label: '查看簡介', link: 'https://www.google.com/search?q=胡桃鉗+故事' } },
+            { day: 11, type: 'quote', icon: 'fa-mug-hot', content: '「願你的日子如聖誕燈飾般明亮閃耀。」', action: null },
+            { day: 12, type: 'riddle', icon: 'fa-question', content: '謎語：聖誕樹最喜歡什麼學科？', answer: '幾何學 (因為有很多三角形)！' },
+            { day: 13, type: 'song', icon: 'fa-music', content: '今日推薦歌曲：<br><strong>Last Christmas</strong>', action: { label: '去聽歌', link: 'https://www.youtube.com/results?search_query=Last+Christmas' } },
+            { day: 14, type: 'fact', icon: 'fa-lightbulb', content: '冷知識：<br>最早的聖誕樹裝飾其實是蘋果、堅果和棗子。', action: null },
+            { day: 15, type: 'quote', icon: 'fa-gift', content: '「給予比接受更為有福。」', action: null },
+            { day: 16, type: 'book', icon: 'fa-book-open', content: '繪本推薦：《雪人》<br>一個沒有文字卻充滿溫度的故事。', action: { label: '查看簡介', link: 'https://www.google.com/search?q=雪人+Raymond+Briggs' } },
+            { day: 17, type: 'riddle', icon: 'fa-question', content: '謎語：如果不小心吞下了聖誕裝飾球會怎麼樣？', answer: '會得「裝飾球炎」(開玩笑的，請勿模仿！)' },
+            { day: 18, type: 'song', icon: 'fa-music', content: '今日推薦歌曲：<br><strong>Silent Night</strong>', action: { label: '去聽歌', link: 'https://www.youtube.com/results?search_query=Silent+Night' } },
+            { day: 19, type: 'fact', icon: 'fa-lightbulb', content: '冷知識：<br>「X-mas」中的 X 其實不是英文 X，而是希臘文 Chi (Χ)，是基督 (Christ) 的首字母。', action: null },
+            { day: 20, type: 'quote', icon: 'fa-bell', content: '「聆聽鐘聲，那是和平的聲音。」', action: null },
+            { day: 21, type: 'book', icon: 'fa-book-open', content: '繪本推薦：《格林奇偷走聖誕節》<br>即使沒有禮物，聖誕節依然會來臨。', action: { label: '查看簡介', link: 'https://www.google.com/search?q=How+the+Grinch+Stole+Christmas' } },
+            { day: 22, type: 'song', icon: 'fa-music', content: '今日推薦歌曲：<br><strong>Santa Claus Is Coming to Town</strong>', action: { label: '去聽歌', link: 'https://www.youtube.com/results?search_query=Santa+Claus+Is+Coming+to+Town' } },
+            { day: 23, type: 'riddle', icon: 'fa-question', content: '謎語：聖誕老人過完節後會去哪裡？', answer: '去放「聖誕」假！' },
+            { day: 24, type: 'fact', icon: 'fa-lightbulb', content: '冷知識：<br>世界上最高的雪人建於 2008 年的美國，身高達 37 公尺！', action: null },
+            { day: 25, type: 'gift', icon: 'fa-sleigh', content: '聖誕快樂！<br>你已經完成了所有的倒數任務！<br>願新的一年平安喜樂！', action: null }
+        ];
+
+        /** App State & Logic **/
+        const STORAGE_KEY_OPENED = 'xmas2025_opened';
+        const STORAGE_KEY_WISHES = 'xmas2025_wishes';
+        
+        let openedDays = JSON.parse(localStorage.getItem(STORAGE_KEY_OPENED)) || [];
+        let wishes = JSON.parse(localStorage.getItem(STORAGE_KEY_WISHES)) || [];
+        let isTestMode = false; // False = Strict, True = Test
+
+        // DOM Elements
+        const gridEl = document.getElementById('calendar-grid');
+        const modalEl = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalIcon = document.getElementById('modal-icon');
+        const modalContent = document.getElementById('modal-content');
+        const modalAction = document.getElementById('modal-action');
+        const closeModalBtn = document.getElementById('close-modal');
+        const treeContainer = document.getElementById('tree-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const wishInput = document.getElementById('wish-input');
+        const addWishBtn = document.getElementById('add-wish-btn');
+        const wishListEl = document.getElementById('wish-list');
+        const modeToggleBtn = document.getElementById('mode-toggle');
+        const modeText = document.getElementById('mode-text');
+        const screenshotBtn = document.getElementById('screenshot-btn');
+        const santaSleigh = document.getElementById('santa-sleigh');
+
+        // Init
+        function init() {
+            renderGrid();
+            renderWishes();
+            updateTree();
+            generateSnow();
+            checkSanta();
+        }
+
+        // --- Grid & Card Logic ---
+        function renderGrid() {
+            gridEl.innerHTML = '';
+            const today = new Date().getDate(); 
+            // Note: In strict mode, we use actual date. For demo, assumed Dec 2025.
+            // If running today (not Dec), logic handles it based on selection.
+            
+            adventData.forEach(item => {
+                const day = item.day;
+                const isOpened = openedDays.includes(day);
+                // In strict mode: assume current month is Dec. If not Dec, allow none or all? 
+                // Let's implement: If not Dec, treat as Dec 1st for strictness or just check day number vs Date().getDate()
+                // Simple logic: Allow opening if day <= today.
+                const currentDay = new Date().getDate();
+                const currentMonth = new Date().getMonth() + 1; // 1-12
+                
+                let isUnlockable = isTestMode || (currentMonth === 12 && day <= currentDay) || (currentMonth > 12); 
+                // For testing purposes right now (since it's not Dec 2025), if current month != 12, strict mode might block all except day 1-today logic.
+                // Let's relax strict mode for "Not December" to allow testing based on day of month only.
+                if (!isTestMode && currentMonth !== 12) {
+                     // If it's not December, strict mode acts based on today's day number only for demo
+                     isUnlockable = day <= currentDay; 
+                }
+
+                const card = document.createElement('div');
+                card.className = `card perspective-1000 h-32 md:h-40 ${isOpened ? 'opened' : ''} ${!isUnlockable && !isOpened ? 'disabled' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="card-inner w-full h-full relative duration-500 transform-style-3d transition-transform">
+                        <div class="card-front text-4xl shadow-md border-white border-2">
+                            ${day}
+                        </div>
+                        <div class="card-back shadow-md">
+                            <i class="fa-solid ${item.icon} text-3xl mb-2 text-xmas-red"></i>
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">${item.type}</span>
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    if (isOpened) {
+                        openModal(item);
+                    } else if (isUnlockable) {
+                        // Open Card
+                        card.classList.add('opened');
+                        openedDays.push(day);
+                        localStorage.setItem(STORAGE_KEY_OPENED, JSON.stringify(openedDays));
+                        
+                        // Wait for flip animation then show modal
+                        setTimeout(() => openModal(item), 600);
+                        updateTree();
+                        checkSanta();
+                    } else {
+                        alert("還沒到這一天喔！請耐心等待驚喜。");
+                    }
+                });
+
+                gridEl.appendChild(card);
+            });
+        }
+
+        // --- Modal Logic ---
+        function openModal(item) {
+            modalTitle.innerText = `Day ${item.day}`;
+            modalIcon.innerHTML = `<i class="fa-solid ${item.icon}"></i>`;
+            modalContent.innerHTML = item.content;
+            modalAction.innerHTML = '';
+
+            // Handle different types
+            if (item.type === 'riddle') {
+                const btn = document.createElement('button');
+                btn.className = 'bg-xmas-green text-white px-4 py-2 rounded-lg mt-2 hover:bg-green-800 transition';
+                btn.innerText = '看答案';
+                btn.onclick = () => {
+                    btn.innerText = item.answer;
+                    btn.className = 'bg-gray-200 text-gray-800 px-4 py-2 rounded-lg mt-2';
+                    btn.disabled = true;
+                };
+                modalAction.appendChild(btn);
+            } else if (item.action) {
+                const link = document.createElement('a');
+                link.href = item.action.link;
+                link.target = '_blank';
+                link.className = 'inline-block bg-xmas-red text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-red-700 transition transform hover:scale-105';
+                link.innerText = item.action.label;
+                modalAction.appendChild(link);
+            }
+
+            modalEl.classList.add('active');
+        }
+
+        closeModalBtn.addEventListener('click', () => {
+            modalEl.classList.remove('active');
+        });
+        
+        // Close on outside click
+        modalEl.addEventListener('click', (e) => {
+            if (e.target === modalEl) modalEl.classList.remove('active');
+        });
+
+        // --- Tree & Progress Logic ---
+        function updateTree() {
+            // Calculate progress
+            const total = 25;
+            const current = openedDays.length;
+            const percent = (current / total) * 100;
+
+            progressBar.style.width = `${percent}%`;
+            progressText.innerText = `${current}/${total}`;
+
+            // Add ornaments logic
+            // Clear existing ornaments first to avoid duplicates or complex ID checking
+            const existingOrnaments = document.querySelectorAll('.ornament');
+            existingOrnaments.forEach(el => el.remove());
+
+            // Add ornaments based on count. 
+            // Visual logic: We need to place them roughly within the triangle.
+            // Simplified: Random positions within specific ranges relative to bottom.
+            
+            for (let i = 0; i < current; i++) {
+                const ornament = document.createElement('div');
+                ornament.className = 'ornament absolute rounded-full shadow-sm z-20';
+                
+                // Random color
+                const colors = ['#D42426', '#F8B229', '#E0E0E0', '#3B82F6'];
+                const color = colors[i % colors.length];
+                ornament.style.backgroundColor = color;
+                ornament.style.width = '12px';
+                ornament.style.height = '12px';
+
+                // Random Position Logic (Approximate tree shape)
+                // Tree width approx 200px at bottom, 0 at top (250px high from bottom)
+                // Height index from bottom
+                const h = Math.random() * 200 + 30; // 30 to 230 from bottom
+                const maxW = 100 * (1 - (h / 250)); // max width from center at this height
+                const w = (Math.random() * maxW * 2) - maxW; // -maxW to +maxW
+
+                ornament.style.bottom = `${h}px`;
+                ornament.style.left = `calc(50% + ${w}px)`;
+
+                treeContainer.appendChild(ornament);
+            }
+        }
+
+        // --- Wish List Logic ---
+        function renderWishes() {
+            wishListEl.innerHTML = '';
+            wishes.forEach((wish, index) => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center bg-yellow-50 p-3 rounded-lg border border-yellow-200 shadow-sm animate-fade-in';
+                li.innerHTML = `
+                    <span class="text-gray-700 font-medium">${wish}</span>
+                    <button class="text-red-400 hover:text-red-600 transition" onclick="deleteWish(${index})">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
+                wishListEl.appendChild(li);
+            });
+        }
+
+        addWishBtn.addEventListener('click', addWish);
+        wishInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addWish();
+        });
+
+        function addWish() {
+            const val = wishInput.value.trim();
+            if (val) {
+                wishes.push(val);
+                localStorage.setItem(STORAGE_KEY_WISHES, JSON.stringify(wishes));
+                wishInput.value = '';
+                renderWishes();
+            }
+        }
+
+        window.deleteWish = function(index) {
+            if (confirm('確定要刪除這個願望嗎？')) {
+                wishes.splice(index, 1);
+                localStorage.setItem(STORAGE_KEY_WISHES, JSON.stringify(wishes));
+                renderWishes();
+            }
+        };
+
+        // --- Mode Toggle ---
+        modeToggleBtn.addEventListener('click', () => {
+            isTestMode = !isTestMode;
+            if (isTestMode) {
+                modeToggleBtn.classList.remove('bg-blue-100', 'text-blue-700');
+                modeToggleBtn.classList.add('bg-purple-100', 'text-purple-700');
+                modeText.innerText = "測試模式 (全開)";
+            } else {
+                modeToggleBtn.classList.add('bg-blue-100', 'text-blue-700');
+                modeToggleBtn.classList.remove('bg-purple-100', 'text-purple-700');
+                modeText.innerText = "嚴格模式";
+            }
+            renderGrid(); // Re-render to update lock states
+        });
+
+        // --- Snow Effect (JS generator for cleaner CSS) ---
+        function generateSnow() {
+            const container = document.getElementById('snow-container');
+            const snowflakeCount = 30; // Keep it light for performance
+            
+            for (let i = 0; i < snowflakeCount; i++) {
+                const flake = document.createElement('div');
+                flake.className = 'snowflake';
+                flake.innerHTML = '❄';
+                flake.style.left = Math.random() * 100 + 'vw';
+                flake.style.animationDuration = Math.random() * 5 + 5 + 's'; // 5-10s
+                flake.style.opacity = Math.random();
+                flake.style.fontSize = Math.random() * 10 + 10 + 'px';
+                flake.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(flake);
+            }
+        }
+
+        // --- Screenshot Logic ---
+        screenshotBtn.addEventListener('click', () => {
+            const captureArea = document.getElementById('capture-area');
+            // Hide sticky controls temporary for clean screenshot
+            screenshotBtn.style.display = 'none';
+            modeToggleBtn.style.display = 'none';
+            
+            html2canvas(captureArea, {
+                backgroundColor: null, // Transparent/Use CSS bg
+                scale: 1 // High res
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'my-2025-advent-calendar.png';
+                link.href = canvas.toDataURL();
+                link.click();
+                
+                // Restore buttons
+                screenshotBtn.style.display = 'flex';
+                modeToggleBtn.style.display = 'flex';
+            }).catch(err => {
+                console.error(err);
+                alert('截圖失敗，請稍後再試。');
+                screenshotBtn.style.display = 'flex';
+                modeToggleBtn.style.display = 'flex';
+            });
+        });
+
+        // --- Santa Logic ---
+        function checkSanta() {
+            if (openedDays.length >= 25) {
+                santaSleigh.classList.add('santa-fly');
+            }
+        }
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>
